@@ -5,6 +5,6 @@
         android:id="@+id/playerHPTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:textSize="48sp"/>
+        android:textSize="48sp"
+        android:layout_gravity="center_horizontal" />
 </LinearLayout>

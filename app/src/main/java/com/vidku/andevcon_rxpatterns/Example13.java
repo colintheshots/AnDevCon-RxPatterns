@@ -1,7 +1,9 @@
 package com.vidku.andevcon_rxpatterns;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.util.concurrent.TimeUnit;
@@ -62,5 +64,11 @@ public class Example13 extends Activity {
                         }
                     }
                 });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mPlayerHPTextView.setText("");
     }
 }
