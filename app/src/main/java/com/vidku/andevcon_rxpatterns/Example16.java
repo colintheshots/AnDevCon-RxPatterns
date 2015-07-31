@@ -13,6 +13,7 @@ import android.app.Activity;
  */
 public class Example16 extends Activity {
 
-    
-
+    // See src/test/java/Example16Test
+    // use ./gradlew clean test
+    // make one of the assertions false to see what happens when it fails
 }
