@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.vidku.andevcon_rxpatterns" >
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".Example1"/>
+        <activity android:name=".Example2"/>
+        <activity android:name=".Example3"/>
+        <activity android:name=".Example4"/>
+        <activity android:name=".Example5"/>
+        <activity android:name=".Example6"/>
+        <activity android:name=".Example7"/>
+        <activity android:name=".Example8"/>
+        <activity android:name=".Example9"/>
+        <activity android:name=".Example10"/>
+        <activity android:name=".Example11"/>
+        <activity android:name=".Example12"/>
+        <activity android:name=".Example13"/>
+        <activity android:name=".Example14"/>
+        <activity android:name=".Example15"/>
+        <activity android:name=".Example16"/>
+        <activity android:name=".Example17"/>
+
+    </application>
+
+</manifest>

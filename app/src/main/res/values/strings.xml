@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">AnDevCon-RxPatterns</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="contentDescription">image test</string>
+    <string name="overlay_images_message">Uploading files. Your images will appear overlaid here if it works.</string>
+</resources>
