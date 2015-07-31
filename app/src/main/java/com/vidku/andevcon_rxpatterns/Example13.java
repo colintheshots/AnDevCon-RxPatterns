@@ -1,6 +1,15 @@
 package com.vidku.andevcon_rxpatterns;
 
 import android.app.Activity;
+import android.os.Bundle;
+import android.widget.TextView;
+
+import java.util.concurrent.TimeUnit;
+
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.subjects.BehaviorSubject;
 
 /**
  * Example of observing values in a BehaviorSubject.
@@ -14,4 +23,44 @@ import android.app.Activity;
  */
 public class Example13 extends Activity {
 
+    private BehaviorSubject<Integer> trackUserHealth = BehaviorSubject.create();
+    private int mHitpoints = 100;
+    private TextView mPlayerHPTextView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.activity_example13);
+        mPlayerHPTextView = (TextView) findViewById(R.id.playerHPTextView);
+
+        Observable.interval(1, TimeUnit.SECONDS)
+                .subscribe(new Action1<Long>() {
+                    @Override
+                    public void call(Long aLong) {
+                        mHitpoints-=10;
+                        trackUserHealth.onNext(mHitpoints);
+                    }
+                });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // every time we subscribe we get a new event which is a copy of the
+        // most recent OnNext() call
+        trackUserHealth
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer integer) {
+                        if (integer > 0) {
+                            mPlayerHPTextView.setText("Your hp is " + Integer.toString(integer));
+                        } else {
+                            mPlayerHPTextView.setText("You're dead!");
+                        }
+                    }
+                });
+    }
 }
