@@ -48,6 +48,7 @@ public class Example16Test {
 
     @Test
     public void using_testscheduler_to_simulate_network_events() {
+
         // TestScheduler lets you advance time by hand
         TestScheduler scheduler = new TestScheduler();
 
