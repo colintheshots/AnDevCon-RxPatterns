@@ -82,6 +82,8 @@ public class Example16Test {
         worker.schedule(new Action0() {
             @Override
             public void call() {
+                // explicitly calling onNext in a worker allows one to
+                // create a very specific test of timed events
                 networkSubject.onNext(new NetworkResponse(401));
             }
         }, 1000, TimeUnit.MILLISECONDS);
@@ -140,6 +142,7 @@ public class Example16Test {
             }
         }, 10000, TimeUnit.MILLISECONDS);
 
+        // subscribing so events appear
         networkSubject
                 .subscribeOn(scheduler)
                 .subscribe(subscriber);
@@ -147,6 +150,8 @@ public class Example16Test {
         scheduler.advanceTimeBy(20000, TimeUnit.MILLISECONDS);
 
         subscriber.awaitTerminalEvent();
+
+        // we use the class-based assertError method, since it's easier to match
         subscriber.assertError(TimeoutException.class);
         subscriber.assertValueCount(0);
         subscriber.assertUnsubscribed();
