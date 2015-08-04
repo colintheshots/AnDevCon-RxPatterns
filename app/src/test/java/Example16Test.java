@@ -1,8 +1,11 @@
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 import java.lang.Long;
 import java.lang.Override;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +13,8 @@ import rx.Observable;
 import rx.Scheduler;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.observers.TestSubscriber;
+import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
 import rx.subjects.PublishSubject;
 
@@ -47,10 +52,22 @@ public class Example16Test {
     }
 
     @Test
+    public void test_with_blocking_observable() {
+        List<Integer> expected = Arrays.asList(1, 2, 3, 4, 5);
+        List<Integer> ints = Observable.range(1, 5)
+                .take(5)
+                .toList()
+                .toBlocking()
+                .single();
+        Assert.assertEquals(expected, ints);
+    }
+
+    @Test
     public void using_testscheduler_to_simulate_network_events() {
 
         // TestScheduler lets you advance time by hand
-        TestScheduler scheduler = new TestScheduler();
+        TestScheduler scheduler = Schedulers.test();
+        TestSubscriber<NetworkResponse> subscriber = new TestSubscriber<>();
 
         // Scheduler.Worker lets you schedule events in time
         Scheduler.Worker worker = scheduler.createWorker();
@@ -64,22 +81,42 @@ public class Example16Test {
                 NetworkResponse networkResponse = new NetworkResponse();
                 networkResponse.httpCode = 401;
                 networkSubject.onNext(networkResponse);
+                networkSubject.onCompleted();
             }
         }, 1000, TimeUnit.MILLISECONDS);
 
-        scheduler.advanceTimeBy(2000, TimeUnit.MILLISECONDS);
+        worker.schedule(new Action0() {
+            @Override
+            public void call() {
+                networkSubject.onCompleted();
+            }
+        }, 2000, TimeUnit.MILLISECONDS);
 
-        networkSubject.subscribeOn(scheduler)
-                .subscribe(new Action1<NetworkResponse>() {
-                    @Override
-                    public void call(NetworkResponse networkResponse) {
-                        System.out.println(networkResponse.httpCode);
-                        assertEquals(networkResponse.httpCode, 200);
-                    }
-                });
+        NetworkResponse expected = new NetworkResponse();
+        expected.httpCode = 401;
+
+        networkSubject
+                .subscribeOn(scheduler)
+                .subscribe(subscriber);
+
+        scheduler.advanceTimeBy(1500, TimeUnit.MILLISECONDS);
+        subscriber.assertReceivedOnNext(Arrays.asList(expected));
+
+        subscriber.awaitTerminalEvent();
+        subscriber.assertNoErrors();
+        subscriber.assertUnsubscribed();
     }
 
     private class NetworkResponse {
         int httpCode;
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof NetworkResponse) {
+                return ((NetworkResponse) o).httpCode == httpCode;
+            } else {
+                return false;
+            }
+        }
     }
 }
