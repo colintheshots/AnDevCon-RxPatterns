@@ -75,6 +75,8 @@ public class Example16Test {
         // Subjects allow both input and output, so they can be swapped in for
         // Retrofit calls to unit test your code.
         final PublishSubject<NetworkResponse> networkSubject = PublishSubject.create();
+
+        // schedule a first observable event to occur at 1000 ms
         worker.schedule(new Action0() {
             @Override
             public void call() {
@@ -82,6 +84,7 @@ public class Example16Test {
             }
         }, 1000, TimeUnit.MILLISECONDS);
 
+        // schedule a second observable event to occur at 2000 ms
         worker.schedule(new Action0() {
             @Override
             public void call() {
@@ -90,21 +93,26 @@ public class Example16Test {
             }
         }, 2000, TimeUnit.MILLISECONDS);
 
+        // we must subscribe before anticipating results
         networkSubject
                 .subscribeOn(scheduler)
                 .subscribe(subscriber);
 
+        // we can manually advance time using the scheduler and check assertions
         scheduler.advanceTimeBy(1500, TimeUnit.MILLISECONDS);
         subscriber.assertReceivedOnNext(Arrays.asList(
                 new NetworkResponse(401)));
 
+        // awaitTerminalEvent will wait forever if we don't advance time enough
         scheduler.advanceTimeBy(500, TimeUnit.MILLISECONDS);
         subscriber.awaitTerminalEvent();
         subscriber.assertReceivedOnNext(Arrays.asList(
                 new NetworkResponse(401),
                 new NetworkResponse(200)));
 
+        // TestSubscriber provides many useful methods
         subscriber.assertNoErrors();
+        subscriber.assertValueCount(2);
         subscriber.assertUnsubscribed();
     }
 
