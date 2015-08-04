@@ -90,8 +90,6 @@ public class Example16Test {
             }
         }, 2000, TimeUnit.MILLISECONDS);
 
-        NetworkResponse expected = new NetworkResponse(200);
-
         networkSubject
                 .subscribeOn(scheduler)
                 .subscribe(subscriber);
