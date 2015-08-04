@@ -8,11 +8,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import rx.Observable;
 import rx.Scheduler;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.functions.Func1;
 import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
@@ -113,6 +115,40 @@ public class Example16Test {
         // TestSubscriber provides many useful methods
         subscriber.assertNoErrors();
         subscriber.assertValueCount(2);
+        subscriber.assertUnsubscribed();
+    }
+
+    @Test
+    public void test_anomalous_network_event() {
+
+        // TestScheduler lets you advance time by hand
+        TestScheduler scheduler = Schedulers.test();
+        TestSubscriber<NetworkResponse> subscriber = new TestSubscriber<>();
+
+        // Scheduler.Worker lets you schedule events in time
+        Scheduler.Worker worker = scheduler.createWorker();
+
+        // Subjects allow both input and output, so they can be swapped in for
+        // Retrofit calls to unit test your code.
+        final PublishSubject<NetworkResponse> networkSubject = PublishSubject.create();
+
+        // schedule a first observable event to occur at 1000 ms
+        worker.schedule(new Action0() {
+            @Override
+            public void call() {
+                networkSubject.onError(new TimeoutException());
+            }
+        }, 10000, TimeUnit.MILLISECONDS);
+
+        networkSubject
+                .subscribeOn(scheduler)
+                .subscribe(subscriber);
+
+        scheduler.advanceTimeBy(20000, TimeUnit.MILLISECONDS);
+
+        subscriber.awaitTerminalEvent();
+        subscriber.assertError(TimeoutException.class);
+        subscriber.assertValueCount(0);
         subscriber.assertUnsubscribed();
     }
 
