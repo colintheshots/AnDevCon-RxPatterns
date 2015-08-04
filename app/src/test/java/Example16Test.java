@@ -78,37 +78,44 @@ public class Example16Test {
         worker.schedule(new Action0() {
             @Override
             public void call() {
-                NetworkResponse networkResponse = new NetworkResponse();
-                networkResponse.httpCode = 401;
-                networkSubject.onNext(networkResponse);
-                networkSubject.onCompleted();
+                networkSubject.onNext(new NetworkResponse(401));
             }
         }, 1000, TimeUnit.MILLISECONDS);
 
         worker.schedule(new Action0() {
             @Override
             public void call() {
+                networkSubject.onNext(new NetworkResponse(200));
                 networkSubject.onCompleted();
             }
         }, 2000, TimeUnit.MILLISECONDS);
 
-        NetworkResponse expected = new NetworkResponse();
-        expected.httpCode = 401;
+        NetworkResponse expected = new NetworkResponse(200);
 
         networkSubject
                 .subscribeOn(scheduler)
                 .subscribe(subscriber);
 
         scheduler.advanceTimeBy(1500, TimeUnit.MILLISECONDS);
-        subscriber.assertReceivedOnNext(Arrays.asList(expected));
+        subscriber.assertReceivedOnNext(Arrays.asList(
+                new NetworkResponse(401)));
 
+        scheduler.advanceTimeBy(500, TimeUnit.MILLISECONDS);
         subscriber.awaitTerminalEvent();
+        subscriber.assertReceivedOnNext(Arrays.asList(
+                new NetworkResponse(401),
+                new NetworkResponse(200)));
+
         subscriber.assertNoErrors();
         subscriber.assertUnsubscribed();
     }
 
     private class NetworkResponse {
         int httpCode;
+
+        NetworkResponse(int code) {
+            httpCode = code;
+        }
 
         @Override
         public boolean equals(Object o) {
