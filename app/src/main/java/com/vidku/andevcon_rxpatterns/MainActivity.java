@@ -13,7 +13,7 @@ import android.widget.ListView;
 
 public class MainActivity extends Activity {
 
-    public final static int NUM_EXAMPLES = 17;
+    public final static int NUM_EXAMPLES = 18;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

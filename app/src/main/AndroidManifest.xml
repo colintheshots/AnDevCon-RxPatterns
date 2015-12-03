@@ -35,6 +35,7 @@
         <activity android:name=".Example15"/>
         <activity android:name=".Example16"/>
         <activity android:name=".Example17"/>
+        <activity android:name=".Example18"/>
 
     </application>
 
