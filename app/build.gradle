@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'com.neenbedankt.android-apt'
 
 android {
     compileSdkVersion 24
@@ -41,4 +42,7 @@ dependencies {
     compile 'com.jakewharton.rxbinding:rxbinding:0.4.0'
     compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
     testCompile 'junit:junit:4.12'
+    compile 'com.pushtorefresh.storio:sqlite:1.10.0'
+    compile 'com.pushtorefresh.storio:sqlite-annotations:1.10.0'
+    apt 'com.pushtorefresh.storio:sqlite-annotations-processor:1.10.0'
 }
