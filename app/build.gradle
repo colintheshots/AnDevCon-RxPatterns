@@ -2,8 +2,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.1"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -11,9 +11,9 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.vidku.andevcon_rxpatterns"
+        applicationId "com.colintheshots.andevcon_rxpatterns"
         minSdkVersion 16
-        targetSdkVersion 23
+        targetSdkVersion 24
         versionCode 1
         versionName "1.0"
     }
@@ -28,12 +28,17 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'io.reactivex:rxandroid:0.25.0'
-    compile 'com.squareup.retrofit:retrofit:1.9.0'
+    compile 'com.android.support:appcompat-v7:24.1.1'
+    compile 'com.google.code.gson:gson:2.7'
+    compile 'io.reactivex:rxandroid:1.2.1'
+    compile 'io.reactivex:rxjava:1.1.6'
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.3.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
     compile 'com.squareup.sqlbrite:sqlbrite:0.2.1'
     compile 'com.google.guava:guava:18.0'
-    compile 'com.squareup.okhttp:okhttp:2.4.0'
     compile 'com.squareup.picasso:picasso:2.5.2'
+    compile 'com.jakewharton.rxbinding:rxbinding:0.4.0'
+    compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
     testCompile 'junit:junit:4.12'
 }

@@ -1,4 +1,4 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.Activity;
 import android.content.Intent;

@@ -1,4 +1,4 @@
-package com.vidku.andevcon_rxpatterns.rxfsm;
+package com.colintheshots.andevcon_rxpatterns.rxfsm;
 
 import rx.Observable;
 import rx.functions.Action1;

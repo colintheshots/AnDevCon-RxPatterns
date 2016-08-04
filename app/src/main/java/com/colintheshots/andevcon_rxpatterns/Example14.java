@@ -1,4 +1,4 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
 /**
  * Example of using ViewsObservables.

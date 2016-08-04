@@ -1,4 +1,4 @@
-package com.vidku.andevcon_rxpatterns.rxfsm;
+package com.colintheshots.andevcon_rxpatterns.rxfsm;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,38 +1,37 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
-import com.google.common.collect.Iterables;
-import com.google.gson.annotations.Expose;
-
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.common.collect.Iterables;
+import com.google.gson.annotations.Expose;
+
 import java.util.List;
 import java.util.Map;
 
-import retrofit.RequestInterceptor;
-import retrofit.RestAdapter;
-import retrofit.http.GET;
-import retrofit.http.Path;
-import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
 
 /**
- * Demonstration of simple Retrofit REST calls with RxAndroid.
+ * An example of solving the same problem without RxJava, but with Retrofit.
  *
- * Created by colin on 7/26/15.
+ * Created by colinlee on 8/3/16.
  */
-public class Example1 extends Activity {
+public class Example1_NoRX extends Activity {
 
     /** The GitHub REST API Endpoint */
     public final static String GITHUB_BASE_URL = "https://api.github.com";
@@ -42,44 +41,16 @@ public class Example1 extends Activity {
 
     private GitHubClient mGitHubClient;
     private ListView mListView;
-    private String mGistVisible = "none";
-    private List<Gist> mGistList;
-
-    private AdapterView.OnItemClickListener gistClickListener = new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-            TextView tv = (TextView) view.findViewById(R.id.hiddenIdTextView);
-            if (tv!=null) {
-                String gistName = tv.getText().toString();
-                mGitHubClient.gist(gistName)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Action1<GistDetail>() {
-                            @Override
-                            public void call(GistDetail gistDetail) {
-                                displayFileList(gistDetail);
-                            }
-                        }, new Action1<Throwable>() {
-                            @Override
-                            public void call(Throwable throwable) {
-                                throwable.printStackTrace();
-                            }
-                        });
-
-                mGistVisible = gistName;
-                displayHomeAsUp(true); // just hacking everything together with a single activity for simplicity
-            }
-        }
-    };
 
     /**
      * Retrofit interface to GitHub API methods
      */
     public interface GitHubClient {
         @GET("/gists")
-        Observable<List<Gist>> gists();
+        Call<List<Gist>> gists();
 
         @GET("/gists/{id}")
-        Observable<GistDetail> gist(@Path("id") String id);
+        Call<GistDetail> gist(@Path("id") String id);
     }
 
     @Override
@@ -98,68 +69,52 @@ public class Example1 extends Activity {
             Toast.makeText(getApplicationContext(), "GitHub Personal Access Token is Unset!", Toast.LENGTH_LONG).show();
         }
 
-        mGitHubClient.gists()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Action1<List<Gist>>() {
+        mGitHubClient.gists().enqueue(new Callback<List<Gist>>() {
+            @Override
+            public void onResponse(Call<List<Gist>> call, Response<List<Gist>> response) {
+                String gistName = response.body().get(0).getId();
+                mGitHubClient.gist(gistName).enqueue(new Callback<GistDetail>() {
                     @Override
-                    public void call(List<Gist> gists) {
-                        mGistList = gists;
-                        displayGistList(gists);
-                        mListView.setOnItemClickListener(gistClickListener);
+                    public void onResponse(Call<GistDetail> call, Response<GistDetail> response) {
+                        displayFileList(response.body());
                     }
-                }, new Action1<Throwable>() {
+
                     @Override
-                    public void call(Throwable throwable) {
-                        throwable.printStackTrace();
+                    public void onFailure(Call<GistDetail> call, Throwable t) {
+                        t.printStackTrace();
                     }
                 });
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (mGistVisible.equals("none")) {
-            super.onBackPressed();
-        } else {
-            if (mGistList!=null) {
-                displayGistList(mGistList);
             }
-            mGistVisible = "none";
 
-            displayHomeAsUp(false);
-        }
+            @Override
+            public void onFailure(Call<List<Gist>> call, Throwable t) {
+                t.printStackTrace();
+            }
+        });
     }
-    
+
     private void createGithubClient() {
         if (mGitHubClient == null) {
-            mGitHubClient = new RestAdapter.Builder()
-                    .setRequestInterceptor(new RequestInterceptor() {
-                        @Override
-                        public void intercept(RequestFacade request) {
-                            request.addHeader("Authorization", "token " + Secrets.GITHUB_PERSONAL_ACCESS_TOKEN);
-                        }
-                    })
-                    .setEndpoint(GITHUB_BASE_URL)
-                    .setLogLevel(RestAdapter.LogLevel.HEADERS).build()
-                    .create(GitHubClient.class);
-        }
-    }
 
-    public void displayGistList(final List<Gist> gists) {
-        if (gists.size()>0 && mListView!=null) {
-            mListView.setAdapter(new GistAdapter(Example1.this, gists));
+            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(loggingInterceptor)
+                    .addInterceptor(chain ->
+                            chain.proceed(chain.request().newBuilder().addHeader("Authorization",
+                                    "token " + Secrets.GITHUB_PERSONAL_ACCESS_TOKEN).build())).build();
+
+            mGitHubClient = new Retrofit.Builder()
+                    .client(client)
+                    .baseUrl(GITHUB_BASE_URL)
+                    .build()
+                    .create(GitHubClient.class);
         }
     }
 
     public void displayFileList(final GistDetail gistDetail) {
         if (gistDetail.getFiles().size()>0 && mListView!=null) {
-            mListView.setAdapter(new GistAdapter(Example1.this, gistDetail));
-        }
-    }
-
-    void displayHomeAsUp(Boolean value) {
-        ActionBar actionBar = getActionBar();
-        if (actionBar!=null) {
-            actionBar.setDisplayHomeAsUpEnabled(value);
+            mListView.setAdapter(new GistAdapter(Example1_NoRX.this, gistDetail));
         }
     }
 
@@ -168,11 +123,6 @@ public class Example1 extends Activity {
         private Context mContext;
         private List<Gist> mGists;
         private Map<String, GistFile> mGistFileMap;
-
-        public GistAdapter(Context context, List<Gist> gists) {
-            mContext = context;
-            mGists = gists;
-        }
 
         public GistAdapter(Context context, GistDetail gistDetail) {
             mContext = context;

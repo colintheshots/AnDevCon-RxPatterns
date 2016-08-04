@@ -1,7 +1,4 @@
-package com.vidku.andevcon_rxpatterns;
-
-import com.google.common.collect.Iterables;
-import com.google.gson.annotations.Expose;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -16,21 +13,24 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.Calendar;
-import java.util.Date;
+import com.google.common.collect.Iterables;
+import com.google.gson.annotations.Expose;
+
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
-import retrofit.RequestInterceptor;
-import retrofit.RestAdapter;
-import retrofit.http.GET;
-import retrofit.http.Path;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 /**
  * Example of using concat() to choose between cache and network
@@ -171,15 +171,20 @@ public class Example11 extends Activity {
 
     private void createGithubClient() {
         if (mGitHubClient == null) {
-            mGitHubClient = new RestAdapter.Builder()
-                    .setRequestInterceptor(new RequestInterceptor() {
-                        @Override
-                        public void intercept(RequestFacade request) {
-                            request.addHeader("Authorization", "token " + Secrets.GITHUB_PERSONAL_ACCESS_TOKEN);
-                        }
-                    })
-                    .setEndpoint(GITHUB_BASE_URL)
-                    .setLogLevel(RestAdapter.LogLevel.HEADERS).build()
+            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(loggingInterceptor)
+                    .addInterceptor(chain ->
+                            chain.proceed(chain.request().newBuilder().addHeader("Authorization",
+                                    "token " + Secrets.GITHUB_PERSONAL_ACCESS_TOKEN).build())).build();
+
+            mGitHubClient = new Retrofit.Builder()
+                    .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(client)
+                    .baseUrl(GITHUB_BASE_URL)
+                    .build()
                     .create(GitHubClient.class);
         }
     }

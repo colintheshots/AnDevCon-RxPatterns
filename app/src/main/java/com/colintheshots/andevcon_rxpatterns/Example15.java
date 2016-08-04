@@ -1,7 +1,4 @@
-package com.vidku.andevcon_rxpatterns;
-
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.Expose;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -12,22 +9,28 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
+import com.jakewharton.rxbinding.widget.RxTextView;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import retrofit.RestAdapter;
-import retrofit.converter.GsonConverter;
-import retrofit.http.GET;
-import retrofit.http.Query;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.android.widget.OnTextChangeEvent;
-import rx.android.widget.WidgetObservable;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 /**
  * Debounce() example.
@@ -62,7 +65,6 @@ public class Example15 extends Activity {
         String description;
     }
 
-    private static final String LOG_TAG = "RxRetrofitAutoComplete";
     private static final String GOOGLE_API_BASE_URL = "https://maps.googleapis.com";
     private static final int DELAY = 500;
 
@@ -82,19 +84,27 @@ public class Example15 extends Activity {
         }
 
         if (mGooglePlacesClient == null) {
-            mGooglePlacesClient = new RestAdapter.Builder()
-                    .setConverter(new GsonConverter(new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()))
-                    .setEndpoint(GOOGLE_API_BASE_URL)
-                    .setLogLevel(RestAdapter.LogLevel.FULL).build()
+
+            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(loggingInterceptor).build();
+
+            mGooglePlacesClient = new Retrofit.Builder()
+                    .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
+                    .addConverterFactory(GsonConverterFactory.create(new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()))
+                    .baseUrl(GOOGLE_API_BASE_URL)
+                    .client(client)
+                    .build()
                     .create(GooglePlacesClient.class);
         }
 
-        WidgetObservable.text(editText)
-        .debounce(DELAY, TimeUnit.MILLISECONDS)
-                .map(new Func1<OnTextChangeEvent, String>() {
+        RxTextView.textChanges(editText)
+            .debounce(DELAY, TimeUnit.MILLISECONDS)
+                .map(new Func1<CharSequence, String>() {
                     @Override
-                    public String call(OnTextChangeEvent onTextChangeEvent) {
-                        return onTextChangeEvent.text().toString();
+                    public String call(CharSequence charSequence) {
+                        return charSequence.toString();
                     }
                 })
                 .flatMap(new Func1<String, Observable<PlacesResult>>() {

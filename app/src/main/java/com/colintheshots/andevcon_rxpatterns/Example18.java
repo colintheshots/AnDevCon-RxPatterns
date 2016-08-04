@@ -1,7 +1,7 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
-import com.vidku.andevcon_rxpatterns.rxfsm.Fsm;
-import com.vidku.andevcon_rxpatterns.rxfsm.State;
+import com.colintheshots.andevcon_rxpatterns.rxfsm.Fsm;
+import com.colintheshots.andevcon_rxpatterns.rxfsm.State;
 
 import android.app.Activity;
 import android.media.MediaPlayer;
@@ -12,8 +12,6 @@ import android.widget.TextView;
 
 import java.io.IOException;
 
-import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 /**

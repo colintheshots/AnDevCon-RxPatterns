@@ -1,14 +1,11 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
-import java.util.concurrent.TimeUnit;
-
 import rx.Observable;
-import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;

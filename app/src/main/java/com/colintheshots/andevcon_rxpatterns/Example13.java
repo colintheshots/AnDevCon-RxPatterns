@@ -1,9 +1,7 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.Activity;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.util.concurrent.TimeUnit;

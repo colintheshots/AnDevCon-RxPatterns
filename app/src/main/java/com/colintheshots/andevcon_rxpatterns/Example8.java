@@ -1,12 +1,10 @@
-package com.vidku.andevcon_rxpatterns;
-
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.Expose;
-
-import com.squareup.okhttp.Credentials;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.Activity;
 import android.os.Bundle;
+
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -14,19 +12,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import retrofit.RequestInterceptor;
-import retrofit.RestAdapter;
-import retrofit.client.OkClient;
-import retrofit.converter.GsonConverter;
-import retrofit.http.Field;
-import retrofit.http.FormUrlEncoded;
-import retrofit.http.GET;
-import retrofit.http.POST;
-import retrofit.http.Path;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
+import retrofit2.http.POST;
+import retrofit2.http.Path;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 /**
  * flatMap() to chain Retrofit requests example.
@@ -47,13 +48,15 @@ public class Example8 extends Activity {
 
 
     /** The GitHub REST API Endpoint */
-    public final static String GITHUB_BASE_URL = "https://api.github.com";
+    public final static String GITHUB_BASE_URL = "https://api.github.com/";
 
     /** The Twilio REST API Endpoint */
-    private final static String TWILIO_BASE_URL = "https://api.twilio.com/2010-04-01";
+    private final static String TWILIO_BASE_URL = "https://api.twilio.com/2010-04-01/";
 
     private GitHubClient mGitHubClient;
     private TwilioInterface mTwilioInterface;
+    private static HttpLoggingInterceptor mLoggingInterceptor = new HttpLoggingInterceptor()
+            .setLevel(HttpLoggingInterceptor.Level.BODY);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,34 +107,30 @@ public class Example8 extends Activity {
 
     private void createGithubClient() {
         if (mGitHubClient == null) {
-            mGitHubClient = new RestAdapter.Builder()
-                    .setRequestInterceptor(new RequestInterceptor() {
-                        @Override
-                        public void intercept(RequestFacade request) {
-                            request.addHeader("Authorization", "token " + Secrets.GITHUB_PERSONAL_ACCESS_TOKEN);
-                        }
-                    })
-                    .setEndpoint(GITHUB_BASE_URL)
-                    .setLogLevel(RestAdapter.LogLevel.FULL).build()
+            mGitHubClient = new Retrofit.Builder()
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
+                    .client(new OkHttpClient.Builder().addInterceptor(mLoggingInterceptor)
+                            .addInterceptor(chain ->
+                                    chain.proceed(chain.request().newBuilder().addHeader("Authorization",
+                                            "token " + Secrets.GITHUB_PERSONAL_ACCESS_TOKEN).build())).build())
+                    .baseUrl(GITHUB_BASE_URL)
+                    .build()
                     .create(GitHubClient.class);
         }
     }
 
     private void createTwilioClient() {
         if (mTwilioInterface == null) {
-            mTwilioInterface =
-            new RestAdapter.Builder()
-                    .setRequestInterceptor(new RequestInterceptor() {
-                        @Override
-                        public void intercept(RequestFacade request) {
-                            request.addHeader("Authorization", Credentials.basic(Secrets.twilio_accountsid, Secrets.twilio_authtoken));
-                        }
-                    })
-                    .setEndpoint(TWILIO_BASE_URL)
-                    .setConverter(new GsonConverter(new GsonBuilder()
-                            .excludeFieldsWithoutExposeAnnotation().create()))
-                    .setClient(new OkClient())
-                    .setLogLevel(RestAdapter.LogLevel.FULL)
+            mTwilioInterface = new Retrofit.Builder()
+                    .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
+                    .client(new OkHttpClient.Builder().addInterceptor(mLoggingInterceptor)
+                            .addInterceptor(chain ->
+                                    chain.proceed(chain.request().newBuilder().addHeader("Authorization",
+                                            Credentials.basic(Secrets.twilio_accountsid, Secrets.twilio_authtoken))
+                                            .build())).build())
+                    .addConverterFactory(GsonConverterFactory.create(new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()))
+                    .baseUrl(TWILIO_BASE_URL)
                     .build()
                     .create(TwilioInterface.class);
         }
@@ -139,7 +138,7 @@ public class Example8 extends Activity {
 
     private interface TwilioInterface {
         @FormUrlEncoded
-        @POST("/Accounts/{accountsid}/Calls.json")
+        @POST("Accounts/{accountsid}/Calls.json")
         Observable<CallResponse> makeCall(
                 @Path("accountsid") String accountsid,
                 @Field("From") String from,

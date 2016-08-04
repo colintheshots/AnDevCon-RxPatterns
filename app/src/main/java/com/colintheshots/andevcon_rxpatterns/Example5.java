@@ -1,15 +1,15 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.widget.TextView;
 
+import com.jakewharton.rxbinding.view.RxView;
+
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.android.view.OnClickEvent;
-import rx.android.view.ViewObservable;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
@@ -98,13 +98,13 @@ public class Example5 extends Activity {
         // Hot Observable
         //  Hot observables emit events oblivious of subscribers so
         //  that every subscriber receives the same events.
-        Observable<OnClickEvent> hotObservable =
-                ViewObservable.clicks(mHotTextView);
+        Observable<Void> hotObservable =
+                RxView.clicks(mHotTextView);
 
         hotObservable
-                .subscribe(new Action1<OnClickEvent>() {
+                .subscribe(new Action1<Void>() {
                     @Override
-                    public void call(OnClickEvent onClickEvent) {
+                    public void call(Void aVoid) {
                         mNumClicks++;
                         mHotTextView.setText("Hot: " + Integer.toString(mNumClicks) + " (click again)");
                     }
@@ -116,9 +116,9 @@ public class Example5 extends Activity {
                 });
 
         hotObservable
-                .subscribe(new Action1<OnClickEvent>() {
+                .subscribe(new Action1<Void>() {
                     @Override
-                    public void call(OnClickEvent onClickEvent) {
+                    public void call(Void aVoid) {
                         mHotTextView2.setText("Hot2: " + Integer.toString(mNumClicks));
                     }
                 }, new Action1<Throwable>() {

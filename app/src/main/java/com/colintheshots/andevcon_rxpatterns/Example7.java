@@ -1,4 +1,4 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -10,13 +10,15 @@ import android.widget.TextView;
 
 import java.util.concurrent.TimeUnit;
 
-import retrofit.RestAdapter;
-import retrofit.converter.GsonConverter;
-import retrofit.http.GET;
-import retrofit.http.Query;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
@@ -66,10 +68,15 @@ public class Example7 extends Activity {
 
         Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
-        mWeatherInterface = new RestAdapter.Builder()
-                .setEndpoint("http://api.openweathermap.org")
-                .setLogLevel(RestAdapter.LogLevel.FULL)
-                .setConverter(new GsonConverter(gson))
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        OkHttpClient client = new OkHttpClient.Builder().addInterceptor(loggingInterceptor).build();
+
+        mWeatherInterface = new Retrofit.Builder()
+                .baseUrl("http://api.openweathermap.org")
+                .client(client)
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .build()
                 .create(WeatherInterface.class);
 

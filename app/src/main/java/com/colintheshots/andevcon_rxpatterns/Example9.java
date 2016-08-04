@@ -1,8 +1,4 @@
-package com.vidku.andevcon_rxpatterns;
-
-import com.google.gson.annotations.Expose;
-
-import com.squareup.picasso.Picasso;
+package com.colintheshots.andevcon_rxpatterns;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -13,21 +9,30 @@ import android.os.Environment;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.google.gson.annotations.Expose;
+import com.squareup.picasso.Picasso;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import retrofit.RequestInterceptor;
-import retrofit.RestAdapter;
-import retrofit.http.Body;
-import retrofit.http.Header;
-import retrofit.http.POST;
-import retrofit.mime.TypedFile;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.Header;
+import retrofit2.http.Multipart;
+import retrofit2.http.POST;
+import retrofit2.http.Part;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func2;
+import rx.schedulers.Schedulers;
 
 /**
  * Example of forking the Retrofit chain to hide latency.
@@ -46,7 +51,7 @@ import rx.functions.Func2;
  */
 public class Example9 extends Activity {
 
-    private static final String DRIVE_BASE_URL = "https://www.googleapis.com";
+    private static final String DRIVE_BASE_URL = "https://www.googleapis.com/";
     private static final String TAG = "Example9";
     private static final String FILENAME1 = "andy.png";
     private static final String MIME1 = "image/png";
@@ -75,15 +80,15 @@ public class Example9 extends Activity {
 
         Observable<UploadResponse> uploadResponseObservable =
                 mDriveClient.mediaUpload(
-                    new TypedFile(MIME1, file),
+                        RequestBody.create(MediaType.parse(MIME1),file),
                     MIME1)
                 .cache();
 
         Observable<UploadResponse> uploadResponseObservable2 =
                 mDriveClient.mediaUpload(
-                    new TypedFile(MIME2, file2),
-                    MIME2
-                ).cache();
+                        RequestBody.create(MediaType.parse(MIME2), file2),
+                    MIME2)
+                .cache();
 
         uploadResponseObservable
                 .subscribe(new Action1<UploadResponse>() {
@@ -133,16 +138,19 @@ public class Example9 extends Activity {
     
     private void createDriveClient() {
         if (mDriveClient == null) {
-            mDriveClient = new RestAdapter.Builder()
-                    .setRequestInterceptor(new RequestInterceptor() {
-                        @Override
-                        public void intercept(RequestFacade request) {
-                            request.addHeader(
-                                    "Authorization", "Bearer " + Secrets.ACCESS_TOKEN);
-                        }
-                    })
-                    .setEndpoint(DRIVE_BASE_URL)
-                    .setLogLevel(RestAdapter.LogLevel.FULL)
+            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(loggingInterceptor)
+                    .addInterceptor(chain ->
+                            chain.proceed(chain.request().newBuilder().addHeader("Authorization",
+                                    "Bearer " + Secrets.ACCESS_TOKEN).build())).build();
+
+            mDriveClient = new Retrofit.Builder()
+                    .addCallAdapterFactory(RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io()))
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(client)
+                    .baseUrl(DRIVE_BASE_URL)
                     .build()
                     .create(DriveClient.class);
         }
@@ -157,10 +165,11 @@ public class Example9 extends Activity {
     }
 
     private interface DriveClient {
-        
+
+        @Multipart
         @POST("/upload/drive/v2/files?uploadType=media")
         Observable<UploadResponse> mediaUpload(
-                @Body TypedFile mediaFile,
+                @Part("file") RequestBody mediaFile,
                 @Header("Content-Type") String headerContentType
         );
     }

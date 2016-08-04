@@ -1,4 +1,4 @@
-package com.vidku.andevcon_rxpatterns;
+package com.colintheshots.andevcon_rxpatterns;
 
 /**
  * Simple example of replacing AsyncTask. Notice what happens when
